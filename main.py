@@ -2,16 +2,53 @@ import requests
 import os
 import json
 
+import tweepy
+
+from config import *
+from tweepy import OAuth1UserHandler
+
 # To set your environment variables in your terminal run the following line:
-os.environ['BEARER_TOKEN'] = 'AAAAAAAAAAAAAAAAAAAAAGY0iAEAAAAAz%2BgzFSRNl35Kpx4ZrOxWks6XyCo%3Dx5dDctWITFVwOfhVbGPc7l2wlRBZQu0qkxJRkW8biAuz2InO51'
+os.environ['BEARER_TOKEN'] = BEARER_TOKEN
 bearer_token = os.environ.get('BEARER_TOKEN')
+
+# Configuring tweepy client
+client = tweepy.Client(bearer_token=bearer_token, consumer_key=consumer_key, consumer_secret=consumer_secret,
+                       access_token=access_token, access_token_secret=access_token_secret, return_type=dict)
+
+
+def getUserID(username) -> int:
+    """
+        Function to get User ID
+    :param username: The Twitter username
+    :return: user_id -> The ID of the user
+    """
+    user = client.get_user(username=username)
+    if user['errors']:
+        print("The username entered does not exist")
+        print(user['errors'][0]['detail'])
+    else:
+        user_id = user['data']['id']
+        print(f"The {username}'s ID is : {user_id}")
+        return user_id
+
+
+def getFollowed(user_id) -> dict:
+    """
+    Returns a list of users the specified UserID is following
+    :param user_id: The Twitter user ID
+    :return: followed -> The list of followed users by the user
+    """
+    list = client.get_users_following(id=user_id)
+    print(list)
+    return list
 
 
 # Establish the url query for 500 results. This parameter is passed as GET
+'''
 def create_url():
     # Replace with user ID below
     user_id = 863407099
-    return "https://api.twitter.com/2/users/{}/following?max_results=500".format(user_id)
+    return "https://api.twitter.com/2/users/{}/following?max_results=1000".format(user_id)
 
 
 def get_params():
@@ -32,7 +69,7 @@ def bearer_oauth(r):
 # RETURNS: The response in JSON format
 def connect_to_endpoint(url, params):
     response = requests.request("GET", url, auth=bearer_oauth, params=params)
-    print(response.status_code)
+    #print(response.status_code)
     if response.status_code != 200:
         raise Exception(
             "Request returned an error: {} {}".format(
@@ -40,14 +77,28 @@ def connect_to_endpoint(url, params):
             )
         )
     return response.json()
+'''
 
 
 def main():
-    url = create_url()
-    params = get_params()
-    json_response = connect_to_endpoint(url, params)
-    print(json.dumps(json_response, indent=4, sort_keys=True))
+    user_id = ""
+
+    print("<> Welcome to ManUnfollows <>")
+
+    while True:
+        print("> To begin enter a valid Twitter username:")
+        username = input()
+        if len(username) == 0:
+            print("Please enter a valid username")
+        else:
+            try:
+                user_id = getUserID(username)
+            except Exception as e:
+                print("Error: " + str(e))
+                break
+            #getFollowed(user_id)
 
 
 if __name__ == "__main__":
     main()
+    #getUserID("asdasdasdpoi123")
