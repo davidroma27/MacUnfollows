@@ -23,13 +23,14 @@ def getUserID(username) -> int:
     :return: user_id -> The ID of the user
     """
     user = client.get_user(username=username)
-    if user['errors']:
-        print("The username entered does not exist")
-        print(user['errors'][0]['detail'])
-    else:
+    print(user)
+    if user['data']:
         user_id = user['data']['id']
         print(f"The {username}'s ID is : {user_id}")
         return user_id
+    elif user['errors']:
+        # print("The username entered does not exist")
+        print(user['errors'][0]['detail'])
 
 
 def getFollowed(user_id) -> dict:
@@ -38,9 +39,29 @@ def getFollowed(user_id) -> dict:
     :param user_id: The Twitter user ID
     :return: followed -> The list of followed users by the user
     """
-    list = client.get_users_following(id=user_id)
-    print(list)
-    return list
+    global users
+    users = []
+    list = client.get_users_following(id=user_id, max_results=1000)
+    next_token = list['meta']['next_token']
+    users = list['data']
+    with open("followed.json", "w") as output:
+        output.write(json.dumps(users))
+
+    # check if exists "next_token" and get next page of users
+    while 'next_token' in list['meta'].keys():
+        list = client.get_users_following(id=user_id, max_results=1000, pagination_token=next_token)
+
+        for e in list['data']:
+            users.append(e)
+
+        with open("followed.json", "w") as output:
+            output.write(json.dumps(users))
+
+        # double check for the last page
+        if 'next_token' in list['meta'].keys():
+            next_token = list['meta']['next_token']  # get next token
+
+    return users
 
 
 # Establish the url query for 500 results. This parameter is passed as GET
@@ -96,9 +117,9 @@ def main():
             except Exception as e:
                 print("Error: " + str(e))
                 break
-            #getFollowed(user_id)
+            # getFollowed(user_id)
 
 
 if __name__ == "__main__":
-    main()
-    #getUserID("asdasdasdpoi123")
+    # main()
+    getFollowed(getUserID("macncheesys"))
