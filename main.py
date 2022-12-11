@@ -42,13 +42,13 @@ def getFollowed(user_id) -> dict:
     global users
     users = []
     list = client.get_users_following(id=user_id, max_results=1000)
-    next_token = list['meta']['next_token']
     users = list['data']
     with open("followed.json", "w") as output:
         output.write(json.dumps(users))
 
     # check if exists "next_token" and get next page of users
     while 'next_token' in list['meta'].keys():
+        next_token = list['meta']['next_token']
         list = client.get_users_following(id=user_id, max_results=1000, pagination_token=next_token)
 
         for e in list['data']:
@@ -103,6 +103,7 @@ def connect_to_endpoint(url, params):
 
 def main():
     user_id = ""
+    followed = []
 
     print("<> Welcome to ManUnfollows <>")
 
@@ -114,6 +115,9 @@ def main():
         else:
             try:
                 user_id = getUserID(username)
+                followed = getFollowed(user_id)
+                print(followed)
+                break
             except Exception as e:
                 print("Error: " + str(e))
                 break
@@ -121,5 +125,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main()
-    getFollowed(getUserID("macncheesys"))
+    main()
