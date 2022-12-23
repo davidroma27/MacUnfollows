@@ -24,13 +24,18 @@ def getUserID(username) -> int:
     """
     user = client.get_user(username=username)
     print(user)
-    if user['data']:
-        user_id = user['data']['id']
-        print(f"The {username}'s ID is : {user_id}")
-        return user_id
-    elif user['errors']:
+    try:
+        if 'data' in user:
+            user_id = user['data']['id']
+            print(f"The {username}'s ID is : {user_id}")
+            return user_id
+    #elif user['errors'][0]['title'] == "Not Found Error":
         # print("The username entered does not exist")
-        print(user['errors'][0]['detail'])
+        #print(user['errors'][0]['detail'])
+       # if user['errors'][0]['title'] == "Not Found Error":
+
+    except Exception as e:
+        print("The username entered does not exist")
 
 
 def getFollowed(user_id) -> dict:
@@ -41,6 +46,8 @@ def getFollowed(user_id) -> dict:
     """
     global users
     users = []
+    list = []
+
     list = client.get_users_following(id=user_id, max_results=1000)
     users = list['data']
     with open("followed.json", "w") as output:
@@ -106,18 +113,21 @@ def main():
     followed = []
 
     print("<> Welcome to ManUnfollows <>")
+    print("> To begin enter a valid Twitter username:")
 
     while True:
-        print("> To begin enter a valid Twitter username:")
+
         username = input()
         if len(username) == 0:
-            print("Please enter a valid username")
+            print("Please enter a valid username:")
         else:
             try:
                 user_id = getUserID(username)
-                followed = getFollowed(user_id)
-                print(followed)
-                break
+                if user_id is not None:
+                    followed = getFollowed(user_id)
+                    print(followed)
+                else:
+                    print("Please enter a valid username:")
             except Exception as e:
                 print("Error: " + str(e))
                 break
@@ -126,3 +136,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    #getUserID("12ju1i332u")
