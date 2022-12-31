@@ -29,13 +29,13 @@ def getUserID(username) -> int:
             user_id = user['data']['id']
             print(f"The {username}'s ID is : {user_id}")
             return user_id
-    #elif user['errors'][0]['title'] == "Not Found Error":
-        # print("The username entered does not exist")
-        #print(user['errors'][0]['detail'])
-       # if user['errors'][0]['title'] == "Not Found Error":
+        elif 'errors' in user:
+            if user['errors'][0]['title'] == 'Not Found Error':
+                print("The username entered does not exist")
 
     except Exception as e:
-        print("The username entered does not exist")
+        print(f"Error: {e}")
+
 
 
 def getFollowed(user_id) -> dict:
@@ -48,25 +48,36 @@ def getFollowed(user_id) -> dict:
     users = []
     list = []
 
-    list = client.get_users_following(id=user_id, max_results=1000)
-    users = list['data']
-    with open("followed.json", "w") as output:
-        output.write(json.dumps(users))
+    try:
+        list = client.get_users_following(id=user_id, max_results=1000)
 
-    # check if exists "next_token" and get next page of users
-    while 'next_token' in list['meta'].keys():
-        next_token = list['meta']['next_token']
-        list = client.get_users_following(id=user_id, max_results=1000, pagination_token=next_token)
+        # Check if list is returning data or returning errors
+        if "data" in list:
+            users = list['data']
+            with open("followed.json", "w") as output:
+                output.write(json.dumps(users))
 
-        for e in list['data']:
-            users.append(e)
+            # check if exists "next_token" and get next page of users
+            while 'next_token' in list['meta'].keys():
+                next_token = list['meta']['next_token']
+                list = client.get_users_following(id=user_id, max_results=1000, pagination_token=next_token)
 
-        with open("followed.json", "w") as output:
-            output.write(json.dumps(users))
+                for e in list['data']:
+                    users.append(e)
 
-        # double check for the last page
-        if 'next_token' in list['meta'].keys():
-            next_token = list['meta']['next_token']  # get next token
+                with open("followed.json", "w") as output:
+                    output.write(json.dumps(users))
+
+                # double check for the last page
+                if 'next_token' in list['meta'].keys():
+                    next_token = list['meta']['next_token']  # get next token
+        elif 'errors' in list:
+            title = list['errors'][0]['title']
+            if title == 'Authorization Error':
+                print("The username entered is a private account")
+
+    except Exception as e:
+        print(f"Error: {e}")
 
     return users
 
@@ -115,8 +126,8 @@ def main():
     print("<> Welcome to ManUnfollows <>")
     print("> To begin enter a valid Twitter username:")
 
+    # loop for control username input
     while True:
-
         username = input()
         if len(username) == 0:
             print("Please enter a valid username:")
@@ -125,15 +136,18 @@ def main():
                 user_id = getUserID(username)
                 if user_id is not None:
                     followed = getFollowed(user_id)
-                    print(followed)
+                    if len(followed) > 0:
+                        print(followed)
+                    else:
+                        print("Please enter a valid username:")
                 else:
                     print("Please enter a valid username:")
             except Exception as e:
                 print("Error: " + str(e))
                 break
-            # getFollowed(user_id)
 
 
 if __name__ == "__main__":
     main()
+    #getFollowed(1110821672507056128)
     #getUserID("12ju1i332u")
