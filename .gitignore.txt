@@ -1,0 +1,4 @@
+.idea/
+venv/
+followed.json
+__pycache__/

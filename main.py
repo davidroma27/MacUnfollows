@@ -1,11 +1,9 @@
-import requests
 import os
 import json
-
 import tweepy
-
 from config import *
-from tweepy import OAuth1UserHandler
+from globals import *
+from checkAccounts import check_inactive
 
 # To set your environment variables in your terminal run the following line:
 os.environ['BEARER_TOKEN'] = BEARER_TOKEN
@@ -35,7 +33,6 @@ def getUserID(username) -> int:
 
     except Exception as e:
         print(f"Error: {e}")
-
 
 
 def getFollowed(user_id) -> dict:
@@ -82,48 +79,21 @@ def getFollowed(user_id) -> dict:
     return users
 
 
-# Establish the url query for 500 results. This parameter is passed as GET
-'''
-def create_url():
-    # Replace with user ID below
-    user_id = 863407099
-    return "https://api.twitter.com/2/users/{}/following?max_results=1000".format(user_id)
-
-
-def get_params():
-    return {"user.fields": "created_at"}
-
-
-# Method used for authentication in order to make the request. Authentication is made with OAuth 2.0 Bearer Token
-def bearer_oauth(r):
-    """
-    Method required by bearer token authentication.
-    """
-
-    r.headers["Authorization"] = f"Bearer {bearer_token}"
-    r.headers["User-Agent"] = "v2FollowingLookupPython"
-    return r
-
-# Establish connection with paramenters
-# RETURNS: The response in JSON format
-def connect_to_endpoint(url, params):
-    response = requests.request("GET", url, auth=bearer_oauth, params=params)
-    #print(response.status_code)
-    if response.status_code != 200:
-        raise Exception(
-            "Request returned an error: {} {}".format(
-                response.status_code, response.text
-            )
-        )
-    return response.json()
-'''
-
-
 def main():
-    user_id = ""
-    followed = []
+    """
+        MAIN flow of the app.
+        Asks for a valid username in a infinite loop.
+        Once a username is entered calls the following functions:
+        1- getUserID
+            > If username not exists, app will ask again for a username
+        2- getFollowed
+            > If user entered a private account, app will ask again for a non private account
+    """
 
-    print("<> Welcome to ManUnfollows <>")
+    user_id = ""
+    # followed_users = []
+
+    print("<> Welcome to MacUnfollows <>")
     print("> To begin enter a valid Twitter username:")
 
     # loop for control username input
@@ -135,9 +105,9 @@ def main():
             try:
                 user_id = getUserID(username)
                 if user_id is not None:
-                    followed = getFollowed(user_id)
-                    if len(followed) > 0:
-                        print(followed)
+                    followed_users = getFollowed(user_id)
+                    if len(followed_users) > 0:
+                        print(followed_users)
                     else:
                         print("Please enter a valid username:")
                 else:
@@ -148,6 +118,7 @@ def main():
 
 
 if __name__ == "__main__":
+    initialize()
     main()
-    #getFollowed(1110821672507056128)
-    #getUserID("12ju1i332u")
+    # getFollowed(1110821672507056128)
+    #getUserID("macncheesys")
