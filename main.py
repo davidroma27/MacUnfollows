@@ -14,36 +14,38 @@ client = tweepy.Client(bearer_token=bearer_token, consumer_key=consumer_key, con
                        access_token=access_token, access_token_secret=access_token_secret, return_type=dict)
 
 
-def getUserID(username) -> int:
+def getUserID(username) -> tuple:
     """
         Function to get User ID
     :param username: The Twitter username
     :return: user_id -> The ID of the user
     """
+    global user_id
+    global errors
+    user_id = None
+    errors = None
+
     user = client.get_user(username=username)
-    print(user)
     try:
         if 'data' in user:
             user_id = user['data']['id']
             print(f"The {username}'s ID is : {user_id}")
-            return user_id
         elif 'errors' in user:
-            if user['errors'][0]['title'] == 'Not Found Error':
-                print("The username entered does not exist")
-
+            errors = user['errors']
     except Exception as e:
         print(f"Error: {e}")
+    return user_id, errors
 
-
-def getFollowed(user_id) -> dict:
+def getFollowed(user_id) -> tuple:
     """
     Returns a list of users the specified UserID is following
     :param user_id: The Twitter user ID
     :return: followed -> The list of followed users by the user
     """
     global users
+    global errors
     users = []
-    list = []
+    errors = None
 
     try:
         list = client.get_users_following(id=user_id, max_results=1000)
@@ -69,14 +71,12 @@ def getFollowed(user_id) -> dict:
                 if 'next_token' in list['meta'].keys():
                     next_token = list['meta']['next_token']  # get next token
         elif 'errors' in list:
-            title = list['errors'][0]['title']
-            if title == 'Authorization Error':
-                print("The username entered is a private account")
+            errors = list['errors'][0]
 
     except Exception as e:
         print(f"Error: {e}")
 
-    return users
+    return users, errors
 
 
 def main():
@@ -90,30 +90,49 @@ def main():
             > If user entered a private account, app will ask again for a non private account
     """
 
-    user_id = ""
-    # followed_users = []
-
     print("<> Welcome to MacUnfollows <>")
     print("> To begin enter a valid Twitter username:")
 
-    # loop for control username input
+    # loop for control inputs flows
     while True:
+        global username
+        global period
+
         username = input()
-        if len(username) == 0:
-            print("Please enter a valid username:")
+        while len(username) == 0:
+            print("! - Username cannot be empty")
+            username = input()
+
+        print("> Please enter the maximum days for inactive accounts:")
+        period = input()
+        while len(period) == 0 or not period.isnumeric():
+            print("! - Period cannot be empty and must be numeric")
+            period = input()
         else:
             try:
                 user_id = getUserID(username)
-                if user_id is not None:
-                    followed_users = getFollowed(user_id)
-                    if len(followed_users) > 0:
-                        print(followed_users)
-                    else:
-                        print("Please enter a valid username:")
-                else:
-                    print("Please enter a valid username:")
+                if user_id[0] is not None:
+                    followed_users = getFollowed(user_id[0])
+                    if followed_users[0] is not None:
+                        if len(followed_users[0]) == 0:
+                            print("! - This user does not follow any account")
+                            print("> Please enter a valid username:")
+                        else:
+                            print(username)
+                            print(period)
+                            print(followed_users)
+                    elif followed_users[1] is not None:
+                        error = followed_users[1]
+                        if error[0]["title"] == 'Authorization Error':
+                            print("The username entered is a private account")
+                            print("> Please enter a valid username:")
+                elif user_id[1] is not None:
+                    error = user_id[1]
+                    if error[0]["title"] == 'Not Found Error':
+                        print("The username entered does not exist")
+                        print("> Please enter a valid username:")
             except Exception as e:
-                print("Error: " + str(e))
+                print(f"Error: {e}")
                 break
 
 

@@ -2,3 +2,4 @@
 venv/
 followed.json
 __pycache__/
+config.py
