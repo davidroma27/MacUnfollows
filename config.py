@@ -1,4 +1,4 @@
-#Pase here your Twitter API keys
+#Paste here your Twitter API keys
 BEARER_TOKEN = ""
 consumer_key = ""
 consumer_secret = ""
