@@ -1,9 +1,10 @@
+import asyncio
 import os
 import json
 import tweepy
 from config import *
-from globals import *
-from checkAccounts import check_inactive
+import globals
+import checkAccounts
 
 # To set your environment variables in your terminal run the following line:
 os.environ['BEARER_TOKEN'] = BEARER_TOKEN
@@ -79,7 +80,7 @@ def getFollowed(user_id) -> tuple:
     return users, errors
 
 
-def main():
+async def main():
     """
         MAIN flow of the app.
         Asks for a valid username in a infinite loop.
@@ -112,17 +113,17 @@ def main():
             try:
                 user_id = getUserID(username)
                 if user_id[0] is not None:
-                    followed_users = getFollowed(user_id[0])
-                    if followed_users[0] is not None:
-                        if len(followed_users[0]) == 0:
+                    globals.followed_users = getFollowed(user_id[0])
+                    if globals.followed_users[0] is not None:
+                        if len(globals.followed_users[0]) == 0:
                             print("! - This user does not follow any account")
                             print("> Please enter a valid username:")
                         else:
                             print(username)
                             print(period)
-                            print(followed_users)
-                    elif followed_users[1] is not None:
-                        error = followed_users[1]
+                            await checkAccounts.check_inactive(globals.followed_users[0], period)
+                    elif globals.followed_users[1] is not None:
+                        error = globals.followed_users[1]
                         if error[0]["title"] == 'Authorization Error':
                             print("The username entered is a private account")
                             print("> Please enter a valid username:")
@@ -137,7 +138,6 @@ def main():
 
 
 if __name__ == "__main__":
-    initialize()
-    main()
+    asyncio.run(main())
     # getFollowed(1110821672507056128)
     #getUserID("macncheesys")

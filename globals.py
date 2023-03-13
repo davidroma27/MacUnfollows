@@ -1,4 +1,3 @@
-def initialize():
-    global followed_users
-    followed_users = []
-    global period
+
+followed_users = ()
+period = 0
