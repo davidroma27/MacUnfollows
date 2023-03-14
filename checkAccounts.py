@@ -21,8 +21,12 @@ async def check_inactive(followed_users, period) -> list:
     """
     period = int(period)
     inactives = []
-    today = date.today()
+    today = datetime.today()
     req = 0
+    created_at = ""
+
+    # Calculates the limit date
+    limit_date = today - timedelta(days=period)
 
     for user in followed_users:
         username = user["username"]
@@ -36,24 +40,25 @@ async def check_inactive(followed_users, period) -> list:
 
         req += 1
         if req == 400:
-            print(" ! - Limit has reached")
+            print(" ! - Limit has been reached")
+            break
 
         # Obtains the date of the last tweet
-        created_at_iso = recent_tweets["data"][0]["created_at"]
-        created_at = datetime.fromisoformat(created_at_iso)
-
-        # Calculates the limit date
-        limit_date = today - timedelta(days=period)
+        if "data" in recent_tweets:
+            created_at_iso = recent_tweets["data"][0]["created_at"]
+            created_at = datetime.fromisoformat(created_at_iso[:-1])
+        else:
+            pass
 
         # Checks if an account is inactive (tweet date is older than limit_date)
         if created_at < limit_date:
             inactives.append(username)
 
-        if len(inactives) == 0:
-            print("(i) - No inactive accounts have been found for the introduced period")
-        else:
-            n_inactives = len(inactives)
-            print(f"(i) - {n_inactives} inactive accounts have been found. Do you want unfollow them? (y/n)")
-        print(inactives)
+    if len(inactives) == 0:
+        print("(i) - No inactive accounts have been found for the introduced period")
+    else:
+        n_inactives = len(inactives)
+        print(f"(i) - {n_inactives} inactive accounts have been found. Do you want unfollow them? (y/n)")
+    print(inactives)
 
     return inactives

@@ -141,3 +141,4 @@ if __name__ == "__main__":
     asyncio.run(main())
     # getFollowed(1110821672507056128)
     #getUserID("macncheesys")
+    #checkAccounts.check_inactive([], 365)
