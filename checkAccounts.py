@@ -2,6 +2,8 @@ import os
 import tweepy.asynchronous
 from config import *
 from datetime import datetime, date, timedelta
+import random
+from main import getUserID
 
 # To set your environment variables in your terminal run the following line:
 os.environ['BEARER_TOKEN'] = BEARER_TOKEN
@@ -22,26 +24,32 @@ async def check_inactive(followed_users, period) -> list:
     period = int(period)
     inactives = []
     today = datetime.today()
-    req = 0
     created_at = ""
 
     # Calculates the limit date
     limit_date = today - timedelta(days=period)
 
-    for user in followed_users:
+    for x in range(len(followed_users)):
+        # Select a random account to check
+        user = random.choice(followed_users)
         username = user["username"]
-        try:
-            # Obtains the last 10 tweets from each followed account
-            recent_tweets = await AsyncClient.search_recent_tweets(query=username, max_results=10, tweet_fields="created_at",
-                                                   user_fields="username")
-        except Exception as e:
-            print(f"Error: {e}")
-            break
 
-        req += 1
-        if req == 400:
-            print(" ! - Limit has been reached")
-            break
+        #Gets user ID for each account
+        userId = getUserID(username)[0]
+
+        recent_tweets = []
+        if not "data" in recent_tweets:
+            try:
+                # Obtains the last 5 tweets from each followed account
+                recent_tweets = await AsyncClient.get_users_tweets(id=userId, max_results=5, tweet_fields="created_at",
+                                                       user_fields="username")
+                if "errors" in recent_tweets:
+                    if recent_tweets["errors"][0]["title"] == 'Authorization Error':
+                        continue
+
+            except Exception as e:
+                print(f"Error: {e}")
+                break
 
         # Obtains the date of the last tweet
         if "data" in recent_tweets:
@@ -54,11 +62,16 @@ async def check_inactive(followed_users, period) -> list:
         if created_at < limit_date:
             inactives.append(username)
 
-    if len(inactives) == 0:
+        #Checks if it has reached 450 iterations
+        if x == 449:
+            print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
+            break
+
+    n_inactives = len(inactives)
+    if n_inactives == 0:
         print("(i) - No inactive accounts have been found for the introduced period")
     else:
-        n_inactives = len(inactives)
         print(f"(i) - {n_inactives} inactive accounts have been found. Do you want unfollow them? (y/n)")
-    print(inactives)
 
+    print(inactives)
     return inactives
