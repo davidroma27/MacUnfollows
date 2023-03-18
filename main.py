@@ -122,6 +122,7 @@ async def main():
                             print(username)
                             print(period)
                             await checkAccounts.check_inactive(globals.followed_users[0], period)
+                            break
                     elif globals.followed_users[1] is not None:
                         error = globals.followed_users[1]
                         if error[0]["title"] == 'Authorization Error':

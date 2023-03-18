@@ -3,3 +3,6 @@ venv/
 followed.json
 __pycache__/
 config.py
+package.json
+package-lock.json
+node_modules
