@@ -36,11 +36,6 @@ async def check_inactive(followed_users, period) -> list:
         selected_users.append(user)
         username = user["username"]
 
-        # Checks if it has reached 450 iterations
-        if x == 299:
-            print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
-            break
-
         try:
             #Gets user ID for each account
             userId = getUserID(username)[0]
@@ -66,6 +61,10 @@ async def check_inactive(followed_users, period) -> list:
                 if created_at < limit_date:
                     inactives.append(username)
 
+        except tweepy.errors.TweepyException:
+            if tweepy.errors.TooManyRequests:
+                print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
+                break
         except Exception as e:
             print(f"Error: {e}")
             break

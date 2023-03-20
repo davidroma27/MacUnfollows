@@ -95,51 +95,52 @@ async def main():
     print("> To begin enter a valid Twitter username:")
 
     # loop for control inputs flows
-    while True:
-        global username
-        global period
+    global username
+    global period
 
+    username = input()
+    while len(username) == 0:
+        print("! - Username cannot be empty")
         username = input()
-        while len(username) == 0:
-            print("! - Username cannot be empty")
-            username = input()
 
-        print("> Please enter the maximum days for inactive accounts:")
+    print("> Please enter the maximum days for inactive accounts:")
+    period = input()
+    while len(period) == 0 or not period.isnumeric():
+        print("! - Period cannot be empty and must be numeric")
         period = input()
-        while len(period) == 0 or not period.isnumeric():
-            print("! - Period cannot be empty and must be numeric")
-            period = input()
-        else:
-            try:
-                user_id = getUserID(username)
-                if user_id[0] is not None:
-                    globals.followed_users = getFollowed(user_id[0])
-                    if globals.followed_users[0] is not None:
-                        if len(globals.followed_users[0]) == 0:
-                            print("! - This user does not follow any account")
-                            print("> Please enter a valid username:")
-                        else:
-                            print(username)
-                            print(period)
-                            await checkAccounts.check_inactive(globals.followed_users[0], period)
-                            break
-                    elif globals.followed_users[1] is not None:
-                        error = globals.followed_users[1]
-                        if error[0]["title"] == 'Authorization Error':
-                            print("The username entered is a private account")
-                            print("> Please enter a valid username:")
-                elif user_id[1] is not None:
-                    error = user_id[1]
-                    if error[0]["title"] == 'Not Found Error':
-                        print("The username entered does not exist")
+    else:
+        try:
+            user_id = getUserID(username)
+            if user_id[0] is not None:
+                globals.followed_users = getFollowed(user_id[0])
+                if globals.followed_users[0] is not None:
+                    if len(globals.followed_users[0]) == 0:
+                        print("! - This user does not follow any account")
                         print("> Please enter a valid username:")
-            except Exception as e:
-                print(f"Error: {e}")
-                break
-
+                    else:
+                        print(username)
+                        print(period)
+                        try:
+                            await asyncio.shield(checkAccounts.check_inactive(globals.followed_users[0], period))
+                        except asyncio.TimeoutError:
+                            print("! - Timeout async error")
+                elif globals.followed_users[1] is not None:
+                    error = globals.followed_users[1]
+                    if error[0]["title"] == 'Authorization Error':
+                        print("The username entered is a private account")
+                        print("> Please enter a valid username:")
+            elif user_id[1] is not None:
+                error = user_id[1]
+                if error[0]["title"] == 'Not Found Error':
+                    print("The username entered does not exist")
+                    print("> Please enter a valid username:")
+        except Exception as e:
+            print(f"Error: {e}")
 
 if __name__ == "__main__":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(main())
+
     # getFollowed(1110821672507056128)
     #getUserID("macncheesys")
     #checkAccounts.check_inactive([], 365)
