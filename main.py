@@ -4,7 +4,7 @@ import json
 import tweepy
 from config import *
 import globals
-import checkAccounts
+import actions
 
 # To set your environment variables in your terminal run the following line:
 os.environ['BEARER_TOKEN'] = BEARER_TOKEN
@@ -33,6 +33,9 @@ def getUserID(username) -> tuple:
             print(f"The {username}'s ID is : {user_id}")
         elif 'errors' in user:
             errors = user['errors']
+    except tweepy.errors.TweepyException:
+        if tweepy.errors.TooManyRequests:
+            print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
     except Exception as e:
         print(f"Error: {e}")
     return user_id, errors
@@ -73,7 +76,9 @@ def getFollowed(user_id) -> tuple:
                     next_token = list['meta']['next_token']  # get next token
         elif 'errors' in list:
             errors = list['errors'][0]
-
+    except tweepy.errors.TweepyException:
+        if tweepy.errors.TooManyRequests:
+            print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
     except Exception as e:
         print(f"Error: {e}")
 
@@ -121,7 +126,7 @@ async def main():
                         print(username)
                         print(period)
                         try:
-                            await asyncio.shield(checkAccounts.check_inactive(globals.followed_users[0], period))
+                            await asyncio.shield(actions.check_inactive(globals.followed_users[0], period))
                         except asyncio.TimeoutError:
                             print("! - Timeout async error")
                 elif globals.followed_users[1] is not None:
@@ -138,9 +143,10 @@ async def main():
             print(f"Error: {e}")
 
 if __name__ == "__main__":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    asyncio.run(main())
+    # asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    # asyncio.run(main())
 
     # getFollowed(1110821672507056128)
     #getUserID("macncheesys")
-    #checkAccounts.check_inactive([], 365)
+    # asyncio.run(checkAccounts.check_inactive([], 365))
+    asyncio.run(actions.unfollow_user([131283008]))

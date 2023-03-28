@@ -15,7 +15,7 @@ AsyncClient = tweepy.asynchronous.AsyncClient(bearer_token=bearer_token, consume
                                               access_token=access_token, access_token_secret=access_token_secret,
                                               return_type=dict, wait_on_rate_limit=True)
 
-async def check_inactive(followed_users, period) -> list:
+async def check_inactive(followed_users, period):
     """
     Checks for each followed account if it is inactive depending on the period
     :param followed_users: The array of followed accounts
@@ -59,7 +59,7 @@ async def check_inactive(followed_users, period) -> list:
 
                 # Checks if an account is inactive (tweet date is older than limit_date)
                 if created_at < limit_date:
-                    inactives.append(username)
+                    inactives.append(userId)
 
         except tweepy.errors.TweepyException:
             if tweepy.errors.TooManyRequests:
@@ -74,6 +74,41 @@ async def check_inactive(followed_users, period) -> list:
         print("(i) - No inactive accounts have been found for the introduced period")
     else:
         print(f"(i) - {n_inactives} inactive accounts have been found. Do you want unfollow them? (y/n)")
+        response = input().lower()
 
-    print(inactives)
-    return inactives
+        while response not in ["y", "n"]:
+            print("! - Invalid input. Valid answers are 'y' (yes) or 'n' (no)")
+            response = input().lower()
+
+        if response == "y":
+            await unfollow_user(inactives)
+        elif response == "n":
+            print("(!) - Closing program...")
+
+async def unfollow_user(inactives):
+    """
+    Executes the unfollow action for each account in the array of inactive accounts
+    Limited to 50 requests each 15 mins
+    :param inactives: The array of inactive accounts
+    """
+    unfollowed = []
+
+    for user in inactives:
+        try:
+            await AsyncClient.unfollow_user(user, user_auth=False)
+            print(f"(i) - Unfollowing account with ID: {user}")
+            unfollowed.append(user)
+        except tweepy.errors.TweepyException:
+            if tweepy.errors.TooManyRequests:
+                print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
+                break
+            else:
+                print("(i) - Unknown error")
+        except Exception as e:
+            print(f"(!) - ERROR: {e}")
+
+    n_unfollows = len(unfollowed)
+    if n_unfollows == 0:
+        print("(i) - No accounts have been unfollowed")
+    else:
+        print(f"(i) - {n_unfollows} inactive accounts have been unfollowed.")
