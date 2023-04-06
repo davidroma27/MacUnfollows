@@ -35,10 +35,11 @@ def getUserID(username) -> tuple:
             errors = user['errors']
     except tweepy.errors.TweepyException:
         if tweepy.errors.TooManyRequests:
-            print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
+            print("(!) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
     except Exception as e:
         print(f"Error: {e}")
     return user_id, errors
+
 
 def getFollowed(user_id) -> tuple:
     """
@@ -78,9 +79,9 @@ def getFollowed(user_id) -> tuple:
             errors = list['errors'][0]
     except tweepy.errors.TweepyException:
         if tweepy.errors.TooManyRequests:
-            print("(i) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
+            print("(!) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"(!) ERROR: {e}")
 
     return users, errors
 
@@ -105,48 +106,56 @@ async def main():
 
     username = input()
     while len(username) == 0:
-        print("! - Username cannot be empty")
+        print("(!) - Username cannot be empty")
         username = input()
 
     print("> Please enter the maximum days for inactive accounts:")
     period = input()
     while len(period) == 0 or not period.isnumeric():
-        print("! - Period cannot be empty and must be numeric")
+        print("(!) - Period cannot be empty and must be numeric")
         period = input()
     else:
         try:
             user_id = getUserID(username)
             if user_id[0] is not None:
+                print("(i) - Getting followed accounts...")
                 globals.followed_users = getFollowed(user_id[0])
+                n_followed = len(globals.followed_users[0])
+                print(f"(i) - Found {n_followed} followed accounts")
                 if globals.followed_users[0] is not None:
                     if len(globals.followed_users[0]) == 0:
-                        print("! - This user does not follow any account")
+                        print("(!) - This user does not follow any account")
                         print("> Please enter a valid username:")
                     else:
-                        print(username)
-                        print(period)
+                        # print(username)
+                        # print(period)
                         try:
+                            print("(i) - Looking for inactive accounts...")
                             await asyncio.shield(actions.check_inactive(globals.followed_users[0], period))
                         except asyncio.TimeoutError:
-                            print("! - Timeout async error")
+                            print("(!) - Timeout async error")
                 elif globals.followed_users[1] is not None:
                     error = globals.followed_users[1]
                     if error[0]["title"] == 'Authorization Error':
-                        print("The username entered is a private account")
+                        print("(i) - The username entered is a private account")
                         print("> Please enter a valid username:")
             elif user_id[1] is not None:
                 error = user_id[1]
                 if error[0]["title"] == 'Not Found Error':
-                    print("The username entered does not exist")
+                    print("(i) - The username entered does not exist")
                     print("> Please enter a valid username:")
+        except tweepy.errors.TweepyException:
+            if tweepy.errors.TooManyRequests:
+                print("(!) - Twitter API rate limit has reached. Should wait 15 mins to rerun")
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"(!) ERROR: {e}")
+
 
 if __name__ == "__main__":
-    # asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    # asyncio.run(main())
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(main())
 
     # getFollowed(1110821672507056128)
-    #getUserID("macncheesys")
+    # getUserID("macncheesys")
     # asyncio.run(checkAccounts.check_inactive([], 365))
-    asyncio.run(actions.unfollow_user([131283008]))
+    # asyncio.run(actions.unfollow_user([956585870693453824]))
